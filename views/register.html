@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription - Gestion Couleurs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-indigo-600 text-white px-6 py-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold">Gestion Couleurs</h1>
+        <div class="space-x-4">
+            <a href="/" class="hover:underline">Accueil</a>
+            <a href="/couleurs.html" class="hover:underline">CRUD Couleurs</a>
+            <a href="/login.html" class="hover:underline font-semibold">Se connecter</a>
+        </div>
+    </nav>
+
+    <!-- Formulaire -->
+    <div class="flex-grow flex items-center justify-center p-6">
+        <div class="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md">
+            <h2 class="text-3xl font-bold text-gray-800 text-center mb-6">Créer un compte</h2>
+
+            <form id="registerForm" class="space-y-6">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nom complet</label>
+                    <input type="text" id="name" name="name" required
+                        class="w-full px-4 py-3 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="email" name="email" required
+                        class="w-full px-4 py-3 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+                    <input type="password" id="password" name="password" required
+                        class="w-full px-4 py-3 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition font-semibold">
+                    S’inscrire
+                </button>
+            </form>
+
+            <p id="message" class="text-center text-gray-500 mt-6"></p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer"></div>
+
+    <script>
+        // Gestion du formulaire d'inscription
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!name || !email || !password) {
+                document.getElementById('message').textContent = 'Tous les champs sont obligatoires';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                const data = await response.json();
+
+                // Affichage du message
+                document.getElementById('message').textContent = data.message || data.error;
+
+                // Reset du formulaire si succès
+                if (response.ok) document.getElementById('registerForm').reset();
+            } catch (err) {
+                document.getElementById('message').textContent = 'Erreur serveur : ' + err.message;
+            }
+        });
+
+
+
+    </script>
+    <script>
+        fetch('/componant/footer.html')
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById('footer').innerHTML = html;
+            })
+            .catch(err => console.error("Erreur de chargement du footer :", err));
+    </script>
+
+
+</body>
+
+</html>

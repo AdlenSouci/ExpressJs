@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestion des couleurs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-indigo-600 text-white px-6 py-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold">CRUD test website</h1>
+        <div class="space-x-4">
+            <a href="/" class="hover:underline">Accueil</a>
+            <a href="#" id="logoutBtn" class="hover:underline">Déconnexion</a>
+            <span class="text-gray-300">Connecté en tant que : <strong id="username">Invité</strong></span>
+        </div>
+    </nav>
+
+    <!-- Contenu principal -->
+    <main class="flex-grow flex flex-col items-center p-6 w-full max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">🎨 Gestion des Couleurs</h1>
+
+        <!-- Formulaire d'ajout -->
+        <div class="bg-white shadow-md rounded-xl p-6 w-full max-w-md mb-8">
+            <h2 class="text-xl font-semibold mb-4">Ajouter une couleur</h2>
+            <div class="flex gap-2">
+                <input id="nom_couleur" type="text" placeholder="Nom de la couleur"
+                    class="flex-grow border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <button id="ajouterBtn"
+                    class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                    Ajouter
+                </button>
+            </div>
+        </div>
+
+        <!-- Tableau des couleurs -->
+        <div class="bg-white shadow-md rounded-xl w-full p-6">
+            <h2 class="text-xl font-semibold mb-4">Liste des couleurs</h2>
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="bg-gray-200 text-left">
+                        <th class="p-3">ID</th>
+                        <th class="p-3">Nom de la couleur</th>
+                        <th class="p-3 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="couleursTable"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <div id="footer"></div>
+
+    <script>
+        const API_URL = '/api/couleurs';
+        const token = localStorage.getItem('jwt');
+
+        // Vérifier la présence du token avant tout
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        // Charger les couleurs
+        async function chargerCouleurs() {
+            try {
+                const res = await fetch(API_URL, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (res.status === 401 || res.status === 403) {
+                    localStorage.removeItem('jwt');
+                    window.location.href = '/login.html';
+                    return;
+                }
+
+                const couleurs = await res.json();
+                const tbody = document.getElementById('couleursTable');
+                tbody.innerHTML = '';
+
+                couleurs.forEach(c => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b hover:bg-gray-50 transition';
+                    tr.innerHTML = `
+                <td class="p-3">${c.id}</td>
+                <td class="p-3">
+                    <input id="input-${c.id}" type="text" value="${c.nom_couleur}"
+                        class="border border-gray-300 rounded-lg px-2 py-1 w-full focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </td>
+                <td class="p-3 text-center space-x-2">
+                    <button onclick="modifierCouleur(${c.id})"
+                        class="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition">Modifier</button>
+                    <button onclick="supprimerCouleur(${c.id})"
+                        class="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition">Supprimer</button>
+                </td>`;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error('Erreur chargement couleurs :', err);
+            }
+        }
+
+        // Ajouter couleur
+        document.getElementById('ajouterBtn').addEventListener('click', async () => {
+            const nom = document.getElementById('nom_couleur').value.trim();
+            if (!nom) return alert('Veuillez entrer un nom de couleur.');
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ nom_couleur: nom })
+            });
+            document.getElementById('nom_couleur').value = '';
+            chargerCouleurs();
+        });
+
+        // Modifier couleur
+        async function modifierCouleur(id) {
+            const nom = document.getElementById(`input-${id}`).value.trim();
+            if (!nom) return alert('Le nom ne peut pas être vide.');
+            await fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ nom_couleur: nom })
+            });
+            chargerCouleurs();
+        }
+
+        // Supprimer couleur
+        async function supprimerCouleur(id) {
+            if (!confirm('Supprimer cette couleur ?')) return;
+            await fetch(`${API_URL}/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            chargerCouleurs();
+        }
+
+        // Charger au démarrage
+        chargerCouleurs();
+
+        // Déconnexion
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('jwt');
+            window.location.href = '/login.html';
+        });
+    </script>
+
+
+</body>
+
+</html>
